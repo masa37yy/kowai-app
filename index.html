@@ -2,32 +2,27 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-
-  <!-- スマートフォンで正しい大きさに表示する設定 -->
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0, viewport-fit=cover"
   >
-
   <title>怖いボタン</title>
-
-  <!-- デザイン用CSS -->
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
   <main class="participant-screen">
-    <p class="subtitle">怖いと思った瞬間に押してください</p>
+    <p id="storyName" class="participant-story">開始をお待ちください</p>
+    <p id="participantStatus" class="subtitle">現在は待機中です</p>
 
-    <button id="kowaiButton" class="kowai-button" type="button">
+    <button id="kowaiButton" class="kowai-button" type="button" disabled>
       <span class="emoji">😱</span>
       <span class="button-text">怖い！</span>
     </button>
 
-    <p id="message" class="message">ボタンを押せます</p>
+    <p id="message" class="message">ホストが話を開始すると押せます</p>
   </main>
 
-  <!-- type="module"が重要です -->
   <script type="module" src="script.js"></script>
 </body>
 </html>

@@ -2,25 +2,80 @@ import { database } from "./firebase.js";
 
 import {
   ref,
-  runTransaction
+  onValue,
+  runTransaction,
+  push,
+  set,
+  onDisconnect
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-database.js";
 
 const kowaiButton = document.getElementById("kowaiButton");
 const message = document.getElementById("message");
+const storyName = document.getElementById("storyName");
+const participantStatus = document.getElementById("participantStatus");
 
 const countRef = ref(database, "currentCount");
+const eventRef = ref(database, "event");
+const currentClicksRef = ref(database, "currentClicks");
 
-/*
-  次に押せるまでの待ち時間
-  3000ミリ秒 = 3秒
-*/
 const cooldownMilliseconds = 3000;
 
 let isCoolingDown = false;
+let isEventActive = false;
+let cooldownTimer = null;
 
-/*
-  「怖い！」と読み上げる
-*/
+function getDeviceId() {
+  const storageKey = "kowai-device-id";
+  let id = localStorage.getItem(storageKey);
+
+  if (!id) {
+    id = crypto.randomUUID
+      ? crypto.randomUUID()
+      : `device-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+    localStorage.setItem(storageKey, id);
+  }
+
+  return id;
+}
+
+async function registerPresence() {
+  const deviceId = getDeviceId();
+  const participantRef = ref(database, `participants/${deviceId}`);
+
+  try {
+    await onDisconnect(participantRef).remove();
+    await set(participantRef, {
+      connectedAt: Date.now(),
+      lastSeen: Date.now()
+    });
+  } catch (error) {
+    console.warn("参加人数の登録に失敗しました:", error);
+  }
+}
+
+registerPresence();
+
+onValue(eventRef, (snapshot) => {
+  const event = snapshot.val() || {};
+
+  isEventActive = event.isActive === true;
+  storyName.textContent = event.title || "開始をお待ちください";
+
+  if (isEventActive) {
+    participantStatus.textContent = "怖いと思った瞬間に押してください";
+
+    if (!isCoolingDown) {
+      kowaiButton.disabled = false;
+      message.textContent = "ボタンを押せます";
+    }
+  } else {
+    participantStatus.textContent = "現在は待機中です";
+    kowaiButton.disabled = true;
+    message.textContent = "ホストが話を開始すると押せます";
+  }
+});
+
 function speakKowai() {
   if (!("speechSynthesis" in window)) {
     return;
@@ -29,7 +84,6 @@ function speakKowai() {
   window.speechSynthesis.cancel();
 
   const voice = new SpeechSynthesisUtterance("怖い！");
-
   voice.lang = "ja-JP";
   voice.rate = 1.05;
   voice.pitch = 0.75;
@@ -38,65 +92,63 @@ function speakKowai() {
   window.speechSynthesis.speak(voice);
 }
 
-/*
-  対応端末を振動させる
-*/
 function vibratePhone() {
   if ("vibrate" in navigator) {
     navigator.vibrate([100, 50, 180]);
   }
 }
 
-/*
-  Firebaseのカウントを1増やす
-*/
-async function incrementCount() {
-  await runTransaction(countRef, (currentValue) => {
-    const currentCount =
-      typeof currentValue === "number"
-        ? currentValue
-        : 0;
+async function sendKowai() {
+  const clickRef = push(currentClicksRef);
 
-    return currentCount + 1;
-  });
+  await Promise.all([
+    runTransaction(countRef, (currentValue) => {
+      const currentCount =
+        typeof currentValue === "number" ? currentValue : 0;
+
+      return currentCount + 1;
+    }),
+
+    set(clickRef, {
+      timestamp: Date.now(),
+      deviceId: getDeviceId()
+    })
+  ]);
 }
 
-/*
-  3秒の待ち時間を画面に表示する
-*/
 function startCooldown() {
   isCoolingDown = true;
   kowaiButton.disabled = true;
 
-  let remainingSeconds =
-    cooldownMilliseconds / 1000;
+  let remainingSeconds = cooldownMilliseconds / 1000;
+  message.textContent = `次に押せるまで ${remainingSeconds}秒`;
 
-  message.textContent =
-    `次に押せるまで ${remainingSeconds}秒`;
+  window.clearInterval(cooldownTimer);
 
-  const timer = window.setInterval(() => {
+  cooldownTimer = window.setInterval(() => {
     remainingSeconds -= 1;
 
     if (remainingSeconds <= 0) {
-      window.clearInterval(timer);
-
+      window.clearInterval(cooldownTimer);
       isCoolingDown = false;
-      kowaiButton.disabled = false;
-      message.textContent = "ボタンを押せます";
+
+      if (isEventActive) {
+        kowaiButton.disabled = false;
+        message.textContent = "ボタンを押せます";
+      } else {
+        kowaiButton.disabled = true;
+        message.textContent = "ホストが話を開始すると押せます";
+      }
 
       return;
     }
 
-    message.textContent =
-      `次に押せるまで ${remainingSeconds}秒`;
+    message.textContent = `次に押せるまで ${remainingSeconds}秒`;
   }, 1000);
 }
 
-/*
-  ボタンを押したとき
-*/
 kowaiButton.addEventListener("click", async () => {
-  if (isCoolingDown) {
+  if (isCoolingDown || !isEventActive) {
     return;
   }
 
@@ -104,31 +156,23 @@ kowaiButton.addEventListener("click", async () => {
   vibratePhone();
 
   kowaiButton.classList.add("is-pressed");
-
   window.setTimeout(() => {
     kowaiButton.classList.remove("is-pressed");
   }, 180);
 
   kowaiButton.disabled = true;
-
   message.classList.remove("error");
   message.textContent = "送信中…";
 
   try {
-    await incrementCount();
-
+    await sendKowai();
     message.textContent = "怖い！を送信しました";
-
     startCooldown();
   } catch (error) {
     console.error("送信エラー:", error);
-
-    message.textContent =
-      "送信できませんでした。通信状態を確認してください。";
-
+    message.textContent = "送信できませんでした。通信状態を確認してください。";
     message.classList.add("error");
-
     isCoolingDown = false;
-    kowaiButton.disabled = false;
+    kowaiButton.disabled = !isEventActive;
   }
 });

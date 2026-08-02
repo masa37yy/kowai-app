@@ -2,33 +2,49 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
   >
-
   <title>怖い話・ホスト画面</title>
-
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <!-- 「怖」が画面全体に出る演出 -->
-  <div
-    id="scaryOverlay"
-    class="scary-overlay"
-    aria-hidden="true"
-  >
-    怖
+  <div id="pinGate" class="pin-gate">
+    <form id="pinForm" class="pin-card">
+      <h1>ホスト画面</h1>
+      <p>管理用PINを入力してください</p>
+      <input
+        id="pinInput"
+        class="story-input"
+        type="password"
+        inputmode="numeric"
+        maxlength="8"
+        autocomplete="off"
+        placeholder="PIN"
+      >
+      <button class="save-button" type="submit">開く</button>
+      <p id="pinMessage" class="host-message"></p>
+    </form>
   </div>
 
-  <main class="host-screen">
-    <p class="host-label">ホスト用集計画面</p>
+  <div id="scaryOverlay" class="scary-overlay" aria-hidden="true">怖</div>
 
-    <h1 class="host-title">怖い話 集計</h1>
+  <main id="hostScreen" class="host-screen is-locked">
+    <header class="host-header">
+      <div>
+        <p class="host-label">ホスト用集計画面</p>
+        <h1 class="host-title">怖い話 集計</h1>
+      </div>
 
-    <!-- 音と演出の有効化 -->
+      <section class="participant-card">
+        <span class="participant-count-label">参加中</span>
+        <strong id="participantCount" class="participant-count">0</strong>
+        <span>人</span>
+      </section>
+    </header>
+
     <section class="effect-panel">
       <button
         id="enableEffectsButton"
@@ -37,64 +53,82 @@
       >
         音と「怖」演出を有効にする
       </button>
-
       <p id="effectStatus" class="effect-status">
-        開始前に一度押してください
+        イベント開始前に一度押してください
       </p>
     </section>
 
-    <!-- 話のタイトル -->
-    <section class="story-panel">
-      <label class="story-label" for="storyTitle">
-        怖い話のタイトル
-      </label>
+    <section class="control-grid">
+      <div class="story-panel">
+        <label class="story-label" for="storyTitle">
+          怖い話のタイトル
+        </label>
+        <input
+          id="storyTitle"
+          class="story-input"
+          type="text"
+          maxlength="40"
+          placeholder="例：夜のトンネル"
+          autocomplete="off"
+        >
 
-      <input
-        id="storyTitle"
-        class="story-input"
-        type="text"
-        maxlength="40"
-        placeholder="例：夜のトンネル"
-        autocomplete="off"
-      >
+        <div class="start-end-actions">
+          <button id="startButton" class="start-button" type="button">
+            ▶ 話を開始
+          </button>
+          <button id="endButton" class="end-button" type="button">
+            ■ 話を終了
+          </button>
+        </div>
+
+        <p id="eventStatus" class="event-status">待機中</p>
+      </div>
+
+      <section class="qr-panel">
+        <div id="qrcode" class="qrcode"></div>
+        <p>QRコードを読み取って参加</p>
+        <p id="participantUrl" class="participant-url"></p>
+      </section>
     </section>
 
-    <!-- 現在のカウント -->
     <section class="count-panel">
       <p class="count-heading">現在の「怖い！」</p>
-
       <div class="count-row">
         <span id="countNumber" class="count-number">0</span>
         <span class="count-unit">回</span>
       </div>
-
       <p id="hostMessage" class="host-message">
         Firebaseに接続しています…
       </p>
     </section>
 
-    <!-- 操作ボタン -->
+    <section class="timeline-panel">
+      <div class="timeline-heading">
+        <h2>直近60秒の「怖い」タイミング</h2>
+        <span>10秒ごと</span>
+      </div>
+      <div id="timelineChart" class="timeline-chart"></div>
+    </section>
+
     <div class="host-actions">
       <button id="saveButton" class="save-button" type="button">
         この話の結果を保存
       </button>
-
       <button id="resetButton" class="reset-button" type="button">
         保存せず0に戻す
+      </button>
+      <button id="csvButton" class="csv-button" type="button">
+        CSVを保存
       </button>
     </div>
 
     <p class="host-note">
-      通常は「この話の結果を保存」を押してください。
+      保存するとカウントとタイムラインが0に戻り、参加者画面は待機中になります。
     </p>
 
-    <!-- ランキング -->
     <section class="ranking-panel">
       <div class="ranking-header">
-        <h2 class="ranking-title">
-          怖かった話ランキング
-        </h2>
-
+        <h2 class="ranking-title">怖かった話ランキング</h2>
         <button
           id="deleteResultsButton"
           class="delete-results-button"
@@ -103,19 +137,13 @@
           履歴をすべて削除
         </button>
       </div>
-
       <ol id="rankingList" class="ranking-list">
-        <li class="ranking-empty">
-          まだ保存された結果はありません
-        </li>
+        <li class="ranking-empty">まだ保存された結果はありません</li>
       </ol>
     </section>
-
-    <a class="participant-link" href="index.html">
-      参加者画面を開く
-    </a>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
   <script type="module" src="host.js"></script>
 </body>
 </html>

@@ -9,637 +9,504 @@ import {
   remove
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-database.js";
 
-/* ========================================
-   HTMLの部品
-======================================== */
+/*
+  注意：
+  このPINは、一般参加者の誤操作を防ぐための簡易機能です。
+  GitHubがPublicの場合、ソースを見れば確認できるため、
+  本格的なセキュリティ機能ではありません。
+*/
+const HOST_PIN = "1234";
 
-const countNumber =
-  document.getElementById("countNumber");
+const pinGate = document.getElementById("pinGate");
+const pinForm = document.getElementById("pinForm");
+const pinInput = document.getElementById("pinInput");
+const pinMessage = document.getElementById("pinMessage");
+const hostScreen = document.getElementById("hostScreen");
 
-const storyTitle =
-  document.getElementById("storyTitle");
+const countNumber = document.getElementById("countNumber");
+const storyTitle = document.getElementById("storyTitle");
+const hostMessage = document.getElementById("hostMessage");
+const eventStatus = document.getElementById("eventStatus");
+const participantCount = document.getElementById("participantCount");
 
-const hostMessage =
-  document.getElementById("hostMessage");
+const startButton = document.getElementById("startButton");
+const endButton = document.getElementById("endButton");
+const saveButton = document.getElementById("saveButton");
+const resetButton = document.getElementById("resetButton");
+const csvButton = document.getElementById("csvButton");
+const deleteResultsButton = document.getElementById("deleteResultsButton");
 
-const saveButton =
-  document.getElementById("saveButton");
+const rankingList = document.getElementById("rankingList");
+const timelineChart = document.getElementById("timelineChart");
 
-const resetButton =
-  document.getElementById("resetButton");
-
-const deleteResultsButton =
-  document.getElementById("deleteResultsButton");
-
-const rankingList =
-  document.getElementById("rankingList");
-
-const scaryOverlay =
-  document.getElementById("scaryOverlay");
-
-const enableEffectsButton =
-  document.getElementById("enableEffectsButton");
-
-const effectStatus =
-  document.getElementById("effectStatus");
-
-/* ========================================
-   Firebase内の保存場所
-======================================== */
+const scaryOverlay = document.getElementById("scaryOverlay");
+const enableEffectsButton = document.getElementById("enableEffectsButton");
+const effectStatus = document.getElementById("effectStatus");
 
 const countRef = ref(database, "currentCount");
 const resultsRef = ref(database, "results");
-
-/* ========================================
-   状態
-======================================== */
+const eventRef = ref(database, "event");
+const participantsRef = ref(database, "participants");
+const currentClicksRef = ref(database, "currentClicks");
 
 let currentCount = 0;
-
-/*
-  最初のFirebase読み込みかどうか
-  初期表示時に音を鳴らさないために使う
-*/
+let currentResults = [];
+let currentClicks = [];
 let hasReceivedInitialCount = false;
-
-/*
-  音と演出が有効か
-*/
 let effectsEnabled = false;
-
-/*
-  Web Audio API
-*/
 let audioContext = null;
+let eventIsActive = false;
 
-/* ========================================
-   演出を有効化
-======================================== */
+function unlockHost() {
+  pinGate.hidden = true;
+  hostScreen.classList.remove("is-locked");
+  sessionStorage.setItem("kowai-host-unlocked", "true");
+}
 
-enableEffectsButton.addEventListener(
-  "click",
-  async () => {
-    try {
-      const AudioContextClass =
-        window.AudioContext ||
-        window.webkitAudioContext;
+if (sessionStorage.getItem("kowai-host-unlocked") === "true") {
+  unlockHost();
+}
 
-      if (!AudioContextClass) {
-        effectStatus.textContent =
-          "このブラウザは効果音に対応していません";
+pinForm.addEventListener("submit", (event) => {
+  event.preventDefault();
 
-        return;
-      }
-
-      if (!audioContext) {
-        audioContext = new AudioContextClass();
-      }
-
-      if (audioContext.state === "suspended") {
-        await audioContext.resume();
-      }
-
-      effectsEnabled = true;
-
-      enableEffectsButton.textContent =
-        "音と「怖」演出：有効";
-
-      enableEffectsButton.disabled = true;
-
-      effectStatus.textContent =
-        "参加者が押すと演出が表示されます";
-
-      /*
-        有効化できたことを確認する短い音
-      */
-      playScarySound();
-    } catch (error) {
-      console.error("演出有効化エラー:", error);
-
-      effectStatus.textContent =
-        "演出を有効にできませんでした";
-    }
+  if (pinInput.value === HOST_PIN) {
+    unlockHost();
+    return;
   }
-);
 
-/* ========================================
-   怖い効果音
-======================================== */
+  pinMessage.textContent = "PINが違います";
+  pinMessage.classList.add("error");
+  pinInput.select();
+});
+
+const participantUrl = new URL("index.html", window.location.href).href;
+document.getElementById("participantUrl").textContent = participantUrl;
+
+if (window.QRCode) {
+  new window.QRCode(document.getElementById("qrcode"), {
+    text: participantUrl,
+    width: 190,
+    height: 190,
+    correctLevel: window.QRCode.CorrectLevel.H
+  });
+}
+
+enableEffectsButton.addEventListener("click", async () => {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContextClass) {
+      effectStatus.textContent = "このブラウザは効果音に対応していません";
+      return;
+    }
+
+    if (!audioContext) {
+      audioContext = new AudioContextClass();
+    }
+
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+
+    effectsEnabled = true;
+    enableEffectsButton.textContent = "音と「怖」演出：有効";
+    enableEffectsButton.disabled = true;
+    effectStatus.textContent = "参加者が押すと演出が表示されます";
+
+    playScarySound();
+  } catch (error) {
+    console.error("演出有効化エラー:", error);
+    effectStatus.textContent = "演出を有効にできませんでした";
+  }
+});
 
 function playScarySound() {
-  if (
-    !effectsEnabled ||
-    !audioContext
-  ) {
+  if (!effectsEnabled || !audioContext) {
     return;
   }
 
   const now = audioContext.currentTime;
-
-  const oscillator =
-    audioContext.createOscillator();
-
-  const gainNode =
-    audioContext.createGain();
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
 
   oscillator.type = "sawtooth";
+  oscillator.frequency.setValueAtTime(210, now);
+  oscillator.frequency.exponentialRampToValueAtTime(48, now + 0.7);
 
-  oscillator.frequency.setValueAtTime(
-    180,
-    now
-  );
-
-  oscillator.frequency.exponentialRampToValueAtTime(
-    65,
-    now + 0.45
-  );
-
-  gainNode.gain.setValueAtTime(
-    0.0001,
-    now
-  );
-
-  gainNode.gain.exponentialRampToValueAtTime(
-    0.22,
-    now + 0.025
-  );
-
-  gainNode.gain.exponentialRampToValueAtTime(
-    0.0001,
-    now + 0.5
-  );
+  gainNode.gain.setValueAtTime(0.0001, now);
+  gainNode.gain.exponentialRampToValueAtTime(0.24, now + 0.025);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.72);
 
   oscillator.connect(gainNode);
   gainNode.connect(audioContext.destination);
-
   oscillator.start(now);
-  oscillator.stop(now + 0.52);
+  oscillator.stop(now + 0.74);
 }
 
-/* ========================================
-   「怖」の文字演出
-======================================== */
-
-function showScaryOverlay() {
+function showScaryOverlay(increase = 1) {
   if (!effectsEnabled) {
     return;
   }
 
-  /*
-    連続で押された場合でも
-    アニメーションを最初から再生する
-  */
+  scaryOverlay.textContent = increase > 1 ? `怖 ×${increase}` : "怖";
   scaryOverlay.classList.remove("is-visible");
-
   void scaryOverlay.offsetWidth;
-
   scaryOverlay.classList.add("is-visible");
 
   window.setTimeout(() => {
     scaryOverlay.classList.remove("is-visible");
-  }, 850);
+  }, 1200);
 }
 
-/* ========================================
-   カウントをリアルタイム表示
-======================================== */
+onValue(countRef, (snapshot) => {
+  const value = snapshot.val();
+  const newCount = typeof value === "number" ? value : 0;
 
-onValue(
-  countRef,
-
-  (snapshot) => {
-    const value = snapshot.val();
-
-    const newCount =
-      typeof value === "number"
-        ? value
-        : 0;
-
-    /*
-      初回読み込みでは演出しない。
-
-      新しい値が以前より増えたときだけ
-      音と「怖」を表示する。
-    */
-    if (
-      hasReceivedInitialCount &&
-      newCount > currentCount
-    ) {
-      playScarySound();
-      showScaryOverlay();
-    }
-
-    currentCount = newCount;
-    countNumber.textContent = currentCount;
-
-    hostMessage.textContent =
-      "リアルタイム集計中";
-
-    hostMessage.classList.remove("error");
-
-    countNumber.classList.remove("count-up");
-
-    void countNumber.offsetWidth;
-
-    countNumber.classList.add("count-up");
-
-    hasReceivedInitialCount = true;
-  },
-
-  (error) => {
-    console.error(
-      "カウント読み込みエラー:",
-      error
-    );
-
-    hostMessage.textContent =
-      "カウントを読み込めませんでした。";
-
-    hostMessage.classList.add("error");
+  if (hasReceivedInitialCount && newCount > currentCount) {
+    const increase = newCount - currentCount;
+    playScarySound();
+    showScaryOverlay(increase);
   }
-);
 
-/* ========================================
-   ランキング表示
-======================================== */
+  currentCount = newCount;
+  countNumber.textContent = currentCount;
+  hostMessage.textContent = "リアルタイム集計中";
+  hostMessage.classList.remove("error");
 
-onValue(
-  resultsRef,
+  countNumber.classList.remove("count-up");
+  void countNumber.offsetWidth;
+  countNumber.classList.add("count-up");
 
-  (snapshot) => {
-    const resultsData = snapshot.val();
+  hasReceivedInitialCount = true;
+});
 
-    rankingList.innerHTML = "";
+onValue(eventRef, (snapshot) => {
+  const event = snapshot.val() || {};
+  eventIsActive = event.isActive === true;
 
-    if (!resultsData) {
-      showEmptyRanking();
+  if (eventIsActive) {
+    eventStatus.textContent = `進行中：${event.title || "タイトルなし"}`;
+    eventStatus.classList.add("is-active");
+    storyTitle.value = event.title || storyTitle.value;
+  } else {
+    eventStatus.textContent = "待機中";
+    eventStatus.classList.remove("is-active");
+  }
+
+  startButton.disabled = eventIsActive;
+  endButton.disabled = !eventIsActive;
+});
+
+onValue(participantsRef, (snapshot) => {
+  const participants = snapshot.val() || {};
+  participantCount.textContent = Object.keys(participants).length;
+});
+
+onValue(currentClicksRef, (snapshot) => {
+  const data = snapshot.val() || {};
+
+  currentClicks = Object.values(data)
+    .map((item) => Number(item.timestamp) || 0)
+    .filter((timestamp) => timestamp > 0);
+
+  renderTimeline();
+});
+
+window.setInterval(renderTimeline, 5000);
+
+function renderTimeline() {
+  const now = Date.now();
+  const bucketMilliseconds = 10000;
+  const bucketCount = 6;
+  const buckets = new Array(bucketCount).fill(0);
+
+  currentClicks.forEach((timestamp) => {
+    const age = now - timestamp;
+
+    if (age < 0 || age >= bucketMilliseconds * bucketCount) {
       return;
     }
 
-    const results = Object.entries(
-      resultsData
-    ).map(([id, result]) => {
-      return {
-        id: id,
+    const reverseIndex = Math.floor(age / bucketMilliseconds);
+    const index = bucketCount - 1 - reverseIndex;
+    buckets[index] += 1;
+  });
 
-        title:
-          result.title ||
-          "タイトルなし",
+  const max = Math.max(...buckets, 1);
+  timelineChart.innerHTML = "";
 
-        count:
-          typeof result.count === "number"
-            ? result.count
-            : 0,
+  buckets.forEach((count, index) => {
+    const barGroup = document.createElement("div");
+    barGroup.className = "timeline-bar-group";
 
-        createdAt:
-          result.createdAt || 0
-      };
-    });
+    const value = document.createElement("span");
+    value.className = "timeline-value";
+    value.textContent = String(count);
 
-    results.sort((resultA, resultB) => {
-      if (
-        resultB.count !== resultA.count
-      ) {
-        return (
-          resultB.count -
-          resultA.count
-        );
-      }
+    const bar = document.createElement("div");
+    bar.className = "timeline-bar";
+    bar.style.height = `${Math.max(5, (count / max) * 100)}%`;
 
-      return (
-        resultA.createdAt -
-        resultB.createdAt
-      );
-    });
+    const label = document.createElement("span");
+    label.className = "timeline-label";
+    label.textContent = index === bucketCount - 1
+      ? "現在"
+      : `-${(bucketCount - 1 - index) * 10}秒`;
 
-    results.forEach((result, index) => {
-      rankingList.appendChild(
-        createRankingItem(
-          result,
-          index
-        )
-      );
-    });
-  },
+    barGroup.append(value, bar, label);
+    timelineChart.appendChild(barGroup);
+  });
+}
 
-  (error) => {
-    console.error(
-      "ランキング読み込みエラー:",
-      error
-    );
+startButton.addEventListener("click", async () => {
+  const title = storyTitle.value.trim();
 
-    rankingList.innerHTML = "";
-
-    const errorItem =
-      document.createElement("li");
-
-    errorItem.className =
-      "ranking-empty";
-
-    errorItem.textContent =
-      "ランキングを読み込めませんでした。";
-
-    rankingList.appendChild(errorItem);
+  if (!title) {
+    window.alert("怖い話のタイトルを入力してください。");
+    storyTitle.focus();
+    return;
   }
-);
 
-/* ========================================
-   ランキング1件分
-======================================== */
+  if (!window.confirm(`「${title}」を開始しますか？`)) {
+    return;
+  }
 
-function createRankingItem(
-  result,
-  index
-) {
-  const item =
-    document.createElement("li");
+  setButtonsDisabled(true);
 
+  try {
+    await update(ref(database), {
+      currentCount: 0,
+      currentClicks: null,
+      event: {
+        isActive: true,
+        title,
+        startedAt: Date.now()
+      }
+    });
+
+    hostMessage.textContent = "話を開始しました";
+  } catch (error) {
+    showError("話を開始できませんでした", error);
+  } finally {
+    setButtonsDisabled(false);
+  }
+});
+
+endButton.addEventListener("click", async () => {
+  if (!window.confirm("参加者の「怖い！」ボタンを停止しますか？")) {
+    return;
+  }
+
+  try {
+    await update(eventRef, {
+      isActive: false,
+      endedAt: Date.now()
+    });
+
+    hostMessage.textContent = "話を終了しました";
+  } catch (error) {
+    showError("話を終了できませんでした", error);
+  }
+});
+
+onValue(resultsRef, (snapshot) => {
+  const resultsData = snapshot.val();
+  rankingList.innerHTML = "";
+
+  if (!resultsData) {
+    currentResults = [];
+    showEmptyRanking();
+    return;
+  }
+
+  currentResults = Object.entries(resultsData).map(([id, result]) => ({
+    id,
+    title: result.title || "タイトルなし",
+    count: typeof result.count === "number" ? result.count : 0,
+    createdAt: result.createdAt || 0
+  }));
+
+  currentResults.sort((a, b) => {
+    if (b.count !== a.count) {
+      return b.count - a.count;
+    }
+
+    return a.createdAt - b.createdAt;
+  });
+
+  currentResults.forEach((result, index) => {
+    rankingList.appendChild(createRankingItem(result, index));
+  });
+});
+
+function createRankingItem(result, index) {
+  const item = document.createElement("li");
   item.className = "ranking-item";
 
-  const position =
-    document.createElement("span");
+  const position = document.createElement("span");
+  position.className = "ranking-position";
+  position.textContent = getRankingMark(index);
 
-  position.className =
-    "ranking-position";
+  const information = document.createElement("div");
+  information.className = "ranking-information";
 
-  position.textContent =
-    getRankingMark(index);
+  const title = document.createElement("span");
+  title.className = "ranking-story-title";
+  title.textContent = result.title;
 
-  const information =
-    document.createElement("div");
+  const count = document.createElement("span");
+  count.className = "ranking-count";
+  count.textContent = `${result.count}回`;
 
-  information.className =
-    "ranking-information";
-
-  const title =
-    document.createElement("span");
-
-  title.className =
-    "ranking-story-title";
-
-  title.textContent =
-    result.title;
-
-  const count =
-    document.createElement("span");
-
-  count.className =
-    "ranking-count";
-
-  count.textContent =
-    `${result.count}回`;
-
-  information.appendChild(title);
-  information.appendChild(count);
-
-  item.appendChild(position);
-  item.appendChild(information);
+  information.append(title, count);
+  item.append(position, information);
 
   return item;
 }
 
 function getRankingMark(index) {
-  if (index === 0) {
-    return "🥇";
-  }
-
-  if (index === 1) {
-    return "🥈";
-  }
-
-  if (index === 2) {
-    return "🥉";
-  }
-
+  if (index === 0) return "🥇";
+  if (index === 1) return "🥈";
+  if (index === 2) return "🥉";
   return `${index + 1}位`;
 }
 
 function showEmptyRanking() {
-  const emptyItem =
-    document.createElement("li");
-
-  emptyItem.className =
-    "ranking-empty";
-
-  emptyItem.textContent =
-    "まだ保存された結果はありません";
-
-  rankingList.appendChild(emptyItem);
+  const item = document.createElement("li");
+  item.className = "ranking-empty";
+  item.textContent = "まだ保存された結果はありません";
+  rankingList.appendChild(item);
 }
 
-/* ========================================
-   結果を保存
-======================================== */
+saveButton.addEventListener("click", async () => {
+  const title = storyTitle.value.trim();
 
-saveButton.addEventListener(
-  "click",
-  async () => {
-    const title =
-      storyTitle.value.trim();
+  if (!title) {
+    window.alert("怖い話のタイトルを入力してください。");
+    storyTitle.focus();
+    return;
+  }
 
-    if (title === "") {
-      window.alert(
-        "怖い話のタイトルを入力してください。"
-      );
+  if (!window.confirm(`「${title}」を${currentCount}回で保存しますか？`)) {
+    return;
+  }
 
-      storyTitle.focus();
-      return;
-    }
+  setButtonsDisabled(true);
+  saveButton.textContent = "保存中…";
 
-    if (currentCount === 0) {
-      const saveZero =
-        window.confirm(
-          "現在のカウントは0回です。\n" +
-          "このまま保存しますか？"
-        );
+  try {
+    const newResultRef = push(resultsRef);
 
-      if (!saveZero) {
-        return;
+    await update(ref(database), {
+      [`results/${newResultRef.key}`]: {
+        title,
+        count: currentCount,
+        createdAt: Date.now()
+      },
+      currentCount: 0,
+      currentClicks: null,
+      event: {
+        isActive: false,
+        title: "",
+        endedAt: Date.now()
       }
-    }
+    });
 
-    const shouldSave =
-      window.confirm(
-        `「${title}」を` +
-        `${currentCount}回で保存しますか？`
-      );
-
-    if (!shouldSave) {
-      return;
-    }
-
-    setButtonsDisabled(true);
-
-    saveButton.textContent =
-      "保存中…";
-
-    hostMessage.classList.remove(
-      "error"
-    );
-
-    hostMessage.textContent =
-      "結果を保存しています…";
-
-    try {
-      const newResultRef =
-        push(resultsRef);
-
-      await update(ref(database), {
-        [`results/${newResultRef.key}`]: {
-          title: title,
-          count: currentCount,
-          createdAt: Date.now()
-        },
-
-        currentCount: 0
-      });
-
-      storyTitle.value = "";
-
-      hostMessage.textContent =
-        "結果を保存し、" +
-        "カウントを0に戻しました。";
-
-      storyTitle.focus();
-    } catch (error) {
-      console.error(
-        "結果保存エラー:",
-        error
-      );
-
-      hostMessage.textContent =
-        "結果を保存できませんでした。";
-
-      hostMessage.classList.add(
-        "error"
-      );
-    } finally {
-      setButtonsDisabled(false);
-
-      saveButton.textContent =
-        "この話の結果を保存";
-    }
+    storyTitle.value = "";
+    hostMessage.textContent = "結果を保存し、待機状態に戻しました";
+  } catch (error) {
+    showError("結果を保存できませんでした", error);
+  } finally {
+    setButtonsDisabled(false);
+    saveButton.textContent = "この話の結果を保存";
   }
-);
+});
 
-/* ========================================
-   保存せずリセット
-======================================== */
-
-resetButton.addEventListener(
-  "click",
-  async () => {
-    const shouldReset =
-      window.confirm(
-        "結果を保存せず、" +
-        "カウントを0に戻しますか？"
-      );
-
-    if (!shouldReset) {
-      return;
-    }
-
-    setButtonsDisabled(true);
-
-    resetButton.textContent =
-      "リセット中…";
-
-    hostMessage.classList.remove(
-      "error"
-    );
-
-    try {
-      await set(countRef, 0);
-
-      hostMessage.textContent =
-        "カウントを0に戻しました。";
-    } catch (error) {
-      console.error(
-        "リセットエラー:",
-        error
-      );
-
-      hostMessage.textContent =
-        "カウントをリセットできませんでした。";
-
-      hostMessage.classList.add(
-        "error"
-      );
-    } finally {
-      setButtonsDisabled(false);
-
-      resetButton.textContent =
-        "保存せず0に戻す";
-    }
+resetButton.addEventListener("click", async () => {
+  if (!window.confirm("結果を保存せず、カウントとタイムラインを0に戻しますか？")) {
+    return;
   }
-);
 
-/* ========================================
-   履歴をすべて削除
-======================================== */
+  try {
+    await update(ref(database), {
+      currentCount: 0,
+      currentClicks: null
+    });
 
-deleteResultsButton.addEventListener(
-  "click",
-  async () => {
-    const shouldDelete =
-      window.confirm(
-        "保存済みのランキングを" +
-        "すべて削除しますか？\n" +
-        "削除した結果は元に戻せません。"
-      );
-
-    if (!shouldDelete) {
-      return;
-    }
-
-    const finalConfirmation =
-      window.confirm(
-        "本当にすべて削除しますか？"
-      );
-
-    if (!finalConfirmation) {
-      return;
-    }
-
-    deleteResultsButton.disabled =
-      true;
-
-    deleteResultsButton.textContent =
-      "削除中…";
-
-    try {
-      await remove(resultsRef);
-
-      hostMessage.textContent =
-        "ランキングの履歴を削除しました。";
-    } catch (error) {
-      console.error(
-        "履歴削除エラー:",
-        error
-      );
-
-      hostMessage.textContent =
-        "ランキングを削除できませんでした。";
-
-      hostMessage.classList.add(
-        "error"
-      );
-    } finally {
-      deleteResultsButton.disabled =
-        false;
-
-      deleteResultsButton.textContent =
-        "履歴をすべて削除";
-    }
+    hostMessage.textContent = "カウントを0に戻しました";
+  } catch (error) {
+    showError("リセットできませんでした", error);
   }
-);
+});
 
-function setButtonsDisabled(
-  disabled
-) {
+csvButton.addEventListener("click", () => {
+  if (currentResults.length === 0) {
+    window.alert("保存された結果がありません。");
+    return;
+  }
+
+  const rows = [
+    ["順位", "タイトル", "怖い回数", "保存日時"],
+    ...currentResults.map((result, index) => [
+      index + 1,
+      result.title,
+      result.count,
+      new Date(result.createdAt).toLocaleString("ja-JP")
+    ])
+  ];
+
+  const csv = "\uFEFF" + rows
+    .map((row) => row.map(escapeCsvValue).join(","))
+    .join("\r\n");
+
+  const blob = new Blob([csv], {
+    type: "text/csv;charset=utf-8"
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = `kowai-ranking-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+
+  URL.revokeObjectURL(url);
+});
+
+function escapeCsvValue(value) {
+  const text = String(value ?? "");
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+deleteResultsButton.addEventListener("click", async () => {
+  if (!window.confirm("保存済みのランキングをすべて削除しますか？")) {
+    return;
+  }
+
+  if (!window.confirm("本当にすべて削除しますか？")) {
+    return;
+  }
+
+  try {
+    await remove(resultsRef);
+    hostMessage.textContent = "ランキングの履歴を削除しました";
+  } catch (error) {
+    showError("ランキングを削除できませんでした", error);
+  }
+});
+
+function setButtonsDisabled(disabled) {
+  startButton.disabled = disabled || eventIsActive;
+  endButton.disabled = disabled || !eventIsActive;
   saveButton.disabled = disabled;
   resetButton.disabled = disabled;
+  csvButton.disabled = disabled;
+  deleteResultsButton.disabled = disabled;
+}
 
-  deleteResultsButton.disabled =
-    disabled;
+function showError(message, error) {
+  console.error(message, error);
+  hostMessage.textContent = message;
+  hostMessage.classList.add("error");
 }
