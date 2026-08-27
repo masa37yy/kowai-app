@@ -12,9 +12,6 @@ import {
 } from
   "https://www.gstatic.com/firebasejs/12.17.0/firebase-database.js";
 
-/*
-  ここは今まで使っていた自分の設定値をそのまま入れてください
-*/
 const firebaseConfig = {
   apiKey: "AIzaSyC8QEnHB5zLNiTy3WPEfNQ_9BURAXtizh4",
   authDomain: "kowai-button.firebaseapp.com",
@@ -30,11 +27,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const database = getDatabase(app);
 
-/*
-  Firebaseへ匿名ログインする。
-  script.js / host.js は、この処理が終わってから
-  データベースを使う。
-*/
 const authReady = signInAnonymously(auth)
   .then((userCredential) => {
     console.log(
