@@ -144,6 +144,42 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+  <script>
+  const HOST_PIN = "4837";
+
+  const pinForm = document.getElementById("pinForm");
+  const pinInput = document.getElementById("pinInput");
+  const pinMessage = document.getElementById("pinMessage");
+  const pinGate = document.getElementById("pinGate");
+  const hostScreen = document.getElementById("hostScreen");
+
+  function unlockHostScreen() {
+    pinGate.hidden = true;
+    hostScreen.classList.remove("is-locked");
+    sessionStorage.setItem("kowai-host-unlocked", "true");
+  }
+
+  if (sessionStorage.getItem("kowai-host-unlocked") === "true") {
+    unlockHostScreen();
+  }
+
+  pinForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    const enteredPin = pinInput.value.trim();
+
+    if (enteredPin === HOST_PIN) {
+      pinMessage.textContent = "";
+      unlockHostScreen();
+    } else {
+      pinMessage.textContent = "PINが違います";
+      pinMessage.classList.add("error");
+      pinInput.select();
+    }
+  });
+</script>
+
+<script type="module" src="host.js"></script>
   <script type="module" src="host.js"></script>
 </body>
 </html>
