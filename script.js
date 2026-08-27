@@ -12,6 +12,8 @@ import {
   onDisconnect
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-database.js";
 
+await authReady;
+
 const kowaiButton = document.getElementById("kowaiButton");
 const message = document.getElementById("message");
 const storyName = document.getElementById("storyName");
