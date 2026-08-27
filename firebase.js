@@ -3,7 +3,8 @@ import { initializeApp } from
 
 import {
   getAuth,
-  signInAnonymously
+  signInAnonymously,
+  signInWithEmailAndPassword
 } from
   "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 
@@ -48,5 +49,6 @@ const authReady = signInAnonymously(auth)
 export {
   database,
   auth,
-  authReady
+  authReady,
+  signInWithEmailAndPassword
 };
