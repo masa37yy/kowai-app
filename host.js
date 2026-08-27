@@ -1,4 +1,7 @@
-import { database } from "./firebase.js";
+import {
+  database,
+  authReady
+} from "./firebase.js";
 
 import {
   ref,
@@ -8,6 +11,8 @@ import {
   update,
   remove
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-database.js";
+
+await authReady;
 
 /*
   注意：
