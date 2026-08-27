@@ -16,13 +16,13 @@ import {
   ここは今まで使っていた自分の設定値をそのまま入れてください
 */
 const firebaseConfig = {
-  apiKey: "自分のapiKey",
-  authDomain: "自分のauthDomain",
-  databaseURL: "自分のdatabaseURL",
-  projectId: "自分のprojectId",
-  storageBucket: "自分のstorageBucket",
-  messagingSenderId: "自分のmessagingSenderId",
-  appId: "自分のappId"
+  apiKey: "AIzaSyC8QEnHB5zLNiTy3WPEfNQ_9BURAXtizh4",
+  authDomain: "kowai-button.firebaseapp.com",
+  databaseURL: "https://kowai-button-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kowai-button",
+  storageBucket: "kowai-button.firebasestorage.app",
+  messagingSenderId: "631872635883",
+  appId: "1:631872635883:web:762800fd6660e75495cfae"
 };
 
 const app = initializeApp(firebaseConfig);
