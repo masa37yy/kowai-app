@@ -5,11 +5,16 @@ import {
   getAuth,
   signInAnonymously,
   signInWithEmailAndPassword,
-  signOut
+  signOut,
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence
 } from
   "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 
-import { getDatabase } from
+import {
+  getDatabase
+} from
   "https://www.gstatic.com/firebasejs/12.17.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -23,13 +28,24 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
 const database = getDatabase(app);
+
+/*
+  ログイン状態をブラウザに保存する。
+  同じブラウザなら次回もログイン状態が残る。
+*/
+await setPersistence(
+  auth,
+  browserLocalPersistence
+);
 
 export {
   auth,
   database,
   signInAnonymously,
   signInWithEmailAndPassword,
-  signOut
+  signOut,
+  onAuthStateChanged
 };
