@@ -1,6 +1,7 @@
 import {
+  auth,
   database,
-  authReady
+  signInAnonymously
 } from "./firebase.js";
 
 import {
@@ -11,8 +12,6 @@ import {
   set,
   onDisconnect
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-database.js";
-
-await authReady;
 
 const kowaiButton = document.getElementById("kowaiButton");
 const message = document.getElementById("message");
@@ -29,6 +28,18 @@ let isCoolingDown = false;
 let isEventActive = false;
 let cooldownTimer = null;
 
+try {
+  const credential = await signInAnonymously(auth);
+  console.log("参加者・匿名認証成功:", credential.user.uid);
+} catch (error) {
+  console.error("参加者・匿名認証エラー:", error);
+  kowaiButton.disabled = true;
+  message.textContent =
+    "Firebase認証に失敗しました。ページを再読み込みしてください。";
+  message.classList.add("error");
+  throw error;
+}
+
 function getDeviceId() {
   const storageKey = "kowai-device-id";
   let id = localStorage.getItem(storageKey);
@@ -37,7 +48,6 @@ function getDeviceId() {
     id = crypto.randomUUID
       ? crypto.randomUUID()
       : `device-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
     localStorage.setItem(storageKey, id);
   }
 
@@ -45,46 +55,58 @@ function getDeviceId() {
 }
 
 async function registerPresence() {
-  const deviceId = getDeviceId();
-  const participantRef = ref(database, `participants/${deviceId}`);
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const participantRef = ref(database, `participants/${user.uid}`);
 
   try {
     await onDisconnect(participantRef).remove();
+
     await set(participantRef, {
       connectedAt: Date.now(),
-      lastSeen: Date.now()
+      lastSeen: Date.now(),
+      deviceId: getDeviceId()
     });
   } catch (error) {
     console.warn("参加人数の登録に失敗しました:", error);
   }
 }
 
-registerPresence();
+await registerPresence();
 
-onValue(eventRef, (snapshot) => {
-  const event = snapshot.val() || {};
+onValue(
+  eventRef,
+  (snapshot) => {
+    const event = snapshot.val() || {};
 
-  isEventActive = event.isActive === true;
-  storyName.textContent = event.title || "開始をお待ちください";
+    isEventActive = event.isActive === true;
+    storyName.textContent = event.title || "開始をお待ちください";
 
-  if (isEventActive) {
-    participantStatus.textContent = "怖いと思った瞬間に押してください";
+    if (isEventActive) {
+      participantStatus.textContent =
+        "怖いと思った瞬間に押してください";
 
-    if (!isCoolingDown) {
-      kowaiButton.disabled = false;
-      message.textContent = "ボタンを押せます";
+      if (!isCoolingDown) {
+        kowaiButton.disabled = false;
+        message.textContent = "ボタンを押せます";
+      }
+    } else {
+      participantStatus.textContent = "現在は待機中です";
+      kowaiButton.disabled = true;
+      message.textContent = "ホストが話を開始すると押せます";
     }
-  } else {
-    participantStatus.textContent = "現在は待機中です";
+  },
+  (error) => {
+    console.error("イベント状態の読み込みエラー:", error);
     kowaiButton.disabled = true;
-    message.textContent = "ホストが話を開始すると押せます";
+    message.textContent = "イベント情報を読み込めませんでした";
+    message.classList.add("error");
   }
-});
+);
 
 function speakKowai() {
-  if (!("speechSynthesis" in window)) {
-    return;
-  }
+  if (!("speechSynthesis" in window)) return;
 
   window.speechSynthesis.cancel();
 
@@ -104,6 +126,11 @@ function vibratePhone() {
 }
 
 async function sendKowai() {
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("匿名認証が完了していません");
+  }
+
   const clickRef = push(currentClicksRef);
 
   await Promise.all([
@@ -116,6 +143,7 @@ async function sendKowai() {
 
     set(clickRef, {
       timestamp: Date.now(),
+      uid: user.uid,
       deviceId: getDeviceId()
     })
   ]);
@@ -153,14 +181,13 @@ function startCooldown() {
 }
 
 kowaiButton.addEventListener("click", async () => {
-  if (isCoolingDown || !isEventActive) {
-    return;
-  }
+  if (isCoolingDown || !isEventActive) return;
 
   speakKowai();
   vibratePhone();
 
   kowaiButton.classList.add("is-pressed");
+
   window.setTimeout(() => {
     kowaiButton.classList.remove("is-pressed");
   }, 180);
@@ -175,7 +202,8 @@ kowaiButton.addEventListener("click", async () => {
     startCooldown();
   } catch (error) {
     console.error("送信エラー:", error);
-    message.textContent = "送信できませんでした。通信状態を確認してください。";
+    message.textContent =
+      "送信できませんでした。通信状態を確認してください。";
     message.classList.add("error");
     isCoolingDown = false;
     kowaiButton.disabled = !isEventActive;

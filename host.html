@@ -2,28 +2,15 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>怖い話・ホスト画面</title>
-
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-
-  <!-- ================================
-       ホストログイン画面
-  ================================= -->
-
   <div id="pinGate" class="pin-gate">
     <div class="pin-card">
-
       <h1>ホスト画面</h1>
-
       <p>
         管理者PINとFirebaseの
         ホストアカウントでログインしてください
@@ -66,18 +53,9 @@
         ホストとしてログイン
       </button>
 
-      <p
-        id="pinMessage"
-        class="host-message"
-      ></p>
-
+      <p id="pinMessage" class="host-message"></p>
     </div>
   </div>
-
-
-  <!-- ================================
-       「怖」全画面演出
-  ================================= -->
 
   <div
     id="scaryOverlay"
@@ -87,59 +65,21 @@
     怖
   </div>
 
-
-  <!-- ================================
-       ホスト管理画面
-  ================================= -->
-
-  <main
-    id="hostScreen"
-    class="host-screen is-locked"
-  >
-
-    <!-- ヘッダー -->
-
+  <main id="hostScreen" class="host-screen is-locked">
     <header class="host-header">
-
       <div>
-        <p class="host-label">
-          ホスト用集計画面
-        </p>
-
-        <h1 class="host-title">
-          怖い話 集計
-        </h1>
+        <p class="host-label">ホスト用集計画面</p>
+        <h1 class="host-title">怖い話 集計</h1>
       </div>
 
-
-      <!-- 参加人数 -->
-
       <section class="participant-card">
-
-        <span class="participant-count-label">
-          参加中
-        </span>
-
-        <strong
-          id="participantCount"
-          class="participant-count"
-        >
-          0
-        </strong>
-
+        <span class="participant-count-label">参加中</span>
+        <strong id="participantCount" class="participant-count">0</strong>
         <span>人</span>
-
       </section>
-
     </header>
 
-
-    <!-- ================================
-         演出設定
-    ================================= -->
-
     <section class="effect-panel">
-
       <button
         id="enableEffectsButton"
         class="enable-effects-button"
@@ -148,31 +88,14 @@
         音と「怖」演出を有効にする
       </button>
 
-      <p
-        id="effectStatus"
-        class="effect-status"
-      >
+      <p id="effectStatus" class="effect-status">
         イベント開始前に一度押してください
       </p>
-
     </section>
 
-
-    <!-- ================================
-         話の操作 ＋ QRコード
-    ================================= -->
-
     <section class="control-grid">
-
-
-      <!-- 話の操作 -->
-
       <div class="story-panel">
-
-        <label
-          class="story-label"
-          for="storyTitle"
-        >
+        <label class="story-label" for="storyTitle">
           怖い話のタイトル
         </label>
 
@@ -185,179 +108,70 @@
           autocomplete="off"
         >
 
-
         <div class="start-end-actions">
-
-          <button
-            id="startButton"
-            class="start-button"
-            type="button"
-          >
+          <button id="startButton" class="start-button" type="button">
             ▶ 話を開始
           </button>
 
-
-          <button
-            id="endButton"
-            class="end-button"
-            type="button"
-          >
+          <button id="endButton" class="end-button" type="button">
             ■ 話を終了
           </button>
-
         </div>
 
-
-        <p
-          id="eventStatus"
-          class="event-status"
-        >
-          待機中
-        </p>
-
+        <p id="eventStatus" class="event-status">待機中</p>
       </div>
-
-
-      <!-- QRコード -->
 
       <section class="qr-panel">
-
-        <div
-          id="qrcode"
-          class="qrcode"
-        ></div>
-
-        <p>
-          QRコードを読み取って参加
-        </p>
-
-        <p
-          id="participantUrl"
-          class="participant-url"
-        ></p>
-
+        <div id="qrcode" class="qrcode"></div>
+        <p>QRコードを読み取って参加</p>
+        <p id="participantUrl" class="participant-url"></p>
       </section>
-
     </section>
-
-
-    <!-- ================================
-         現在カウント
-    ================================= -->
 
     <section class="count-panel">
-
-      <p class="count-heading">
-        現在の「怖い！」
-      </p>
-
+      <p class="count-heading">現在の「怖い！」</p>
 
       <div class="count-row">
-
-        <span
-          id="countNumber"
-          class="count-number"
-        >
-          0
-        </span>
-
-        <span class="count-unit">
-          回
-        </span>
-
+        <span id="countNumber" class="count-number">0</span>
+        <span class="count-unit">回</span>
       </div>
 
-
-      <p
-        id="hostMessage"
-        class="host-message"
-      >
-        Firebaseに接続しています…
+      <p id="hostMessage" class="host-message">
+        ホスト認証を待っています…
       </p>
-
     </section>
-
-
-    <!-- ================================
-         タイムライン
-    ================================= -->
 
     <section class="timeline-panel">
-
       <div class="timeline-heading">
-
-        <h2>
-          直近60秒の「怖い」タイミング
-        </h2>
-
-        <span>
-          10秒ごと
-        </span>
-
+        <h2>直近60秒の「怖い」タイミング</h2>
+        <span>10秒ごと</span>
       </div>
 
-
-      <div
-        id="timelineChart"
-        class="timeline-chart"
-      ></div>
-
+      <div id="timelineChart" class="timeline-chart"></div>
     </section>
 
-
-    <!-- ================================
-         操作ボタン
-    ================================= -->
-
     <div class="host-actions">
-
-      <button
-        id="saveButton"
-        class="save-button"
-        type="button"
-      >
+      <button id="saveButton" class="save-button" type="button">
         この話の結果を保存
       </button>
 
-
-      <button
-        id="resetButton"
-        class="reset-button"
-        type="button"
-      >
+      <button id="resetButton" class="reset-button" type="button">
         保存せず0に戻す
       </button>
 
-
-      <button
-        id="csvButton"
-        class="csv-button"
-        type="button"
-      >
+      <button id="csvButton" class="csv-button" type="button">
         CSVを保存
       </button>
-
     </div>
-
 
     <p class="host-note">
       保存するとカウントとタイムラインが0に戻り、
       参加者画面は待機中になります。
     </p>
 
-
-    <!-- ================================
-         ランキング
-    ================================= -->
-
     <section class="ranking-panel">
-
       <div class="ranking-header">
-
-        <h2 class="ranking-title">
-          怖かった話ランキング
-        </h2>
-
+        <h2 class="ranking-title">怖かった話ランキング</h2>
 
         <button
           id="deleteResultsButton"
@@ -366,330 +180,17 @@
         >
           履歴をすべて削除
         </button>
-
       </div>
 
-
-      <ol
-        id="rankingList"
-        class="ranking-list"
-      >
-
+      <ol id="rankingList" class="ranking-list">
         <li class="ranking-empty">
           まだ保存された結果はありません
         </li>
-
       </ol>
-
     </section>
-
   </main>
 
-
-  <!-- ================================
-       QRコードライブラリ
-  ================================= -->
-
-  <script
-    src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"
-  ></script>
-
-
-  <!-- ================================
-       ホスト認証
-  ================================= -->
-
-  <script type="module">
-
-    import {
-      auth,
-      authReady,
-      signInWithEmailAndPassword
-    } from "./firebase.js";
-
-
-    /*
-      簡易PIN
-      必要なら好きな数字に変更できます
-    */
-
-    const HOST_PIN = "4837";
-
-
-    /*
-      Firebase Authenticationで作成した
-      ホストユーザーのUID
-    */
-
-    const HOST_UID =
-      "ERZb5quIuSQW1iMeaco5AZZt5Jn1";
-
-
-    const pinInput =
-      document.getElementById(
-        "pinInput"
-      );
-
-
-    const hostEmail =
-      document.getElementById(
-        "hostEmail"
-      );
-
-
-    const hostPassword =
-      document.getElementById(
-        "hostPassword"
-      );
-
-
-    const hostLoginButton =
-      document.getElementById(
-        "hostLoginButton"
-      );
-
-
-    const pinMessage =
-      document.getElementById(
-        "pinMessage"
-      );
-
-
-    const pinGate =
-      document.getElementById(
-        "pinGate"
-      );
-
-
-    const hostScreen =
-      document.getElementById(
-        "hostScreen"
-      );
-
-
-    console.log(
-      "ホストログイン処理を読み込みました"
-    );
-
-
-    /*
-      管理画面を表示
-    */
-
-    function unlockHostScreen() {
-
-      console.log(
-        "管理画面を開きます"
-      );
-
-
-      pinGate.hidden = true;
-
-
-      hostScreen.classList.remove(
-        "is-locked"
-      );
-
-
-      sessionStorage.setItem(
-        "kowai-host-unlocked",
-        "true"
-      );
-
-    }
-
-
-    /*
-      ログインボタン
-    */
-
-    hostLoginButton.addEventListener(
-      "click",
-      async () => {
-
-        console.log(
-          "ホストログインボタンが押されました"
-        );
-
-
-        pinMessage.classList.remove(
-          "error"
-        );
-
-
-        const enteredPin =
-          pinInput.value.trim();
-
-
-        const email =
-          hostEmail.value.trim();
-
-
-        const password =
-          hostPassword.value;
-
-
-        /*
-          PINチェック
-        */
-
-        if (
-          enteredPin !== HOST_PIN
-        ) {
-
-          pinMessage.textContent =
-            "管理者PINが違います";
-
-
-          pinMessage.classList.add(
-            "error"
-          );
-
-
-          pinInput.focus();
-
-
-          return;
-        }
-
-
-        /*
-          メール・パスワード確認
-        */
-
-        if (
-          !email ||
-          !password
-        ) {
-
-          pinMessage.textContent =
-            "メールアドレスとパスワードを入力してください";
-
-
-          pinMessage.classList.add(
-            "error"
-          );
-
-
-          return;
-        }
-
-
-        /*
-          ボタンを一時停止
-        */
-
-        hostLoginButton.disabled =
-          true;
-
-
-        hostLoginButton.textContent =
-          "ログイン中…";
-
-
-        pinMessage.textContent =
-          "管理者認証しています…";
-
-
-        try {
-
-          /*
-            firebase.jsで実行される
-            匿名認証が終わるまで待つ
-          */
-
-          await authReady;
-
-
-          console.log(
-            "メール認証を開始します"
-          );
-
-
-          /*
-            ホストアカウントへ
-            ログインを切り替える
-          */
-
-          const userCredential =
-            await signInWithEmailAndPassword(
-              auth,
-              email,
-              password
-            );
-
-
-          console.log(
-            "ホスト認証成功:",
-            userCredential.user.uid
-          );
-
-
-          /*
-            UID確認
-          */
-
-          if (
-            userCredential.user.uid
-            !== HOST_UID
-          ) {
-
-            throw new Error(
-              "このアカウントにはホスト権限がありません"
-            );
-
-          }
-
-
-          pinMessage.textContent =
-            "認証成功";
-
-
-          unlockHostScreen();
-
-
-        } catch (error) {
-
-          console.error(
-            "ホスト認証エラー:",
-            error
-          );
-
-
-          pinMessage.textContent =
-            "ホスト認証に失敗しました";
-
-
-          pinMessage.classList.add(
-            "error"
-          );
-
-
-        } finally {
-
-          hostLoginButton.disabled =
-            false;
-
-
-          hostLoginButton.textContent =
-            "ホストとしてログイン";
-
-        }
-
-      }
-    );
-
-  </script>
-
-
-  <!-- ================================
-       ホスト画面本体のJavaScript
-  ================================= -->
-
-  <script
-    type="module"
-    src="host.js"
-  ></script>
-
+  <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+  <script type="module" src="host.js"></script>
 </body>
 </html>

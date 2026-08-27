@@ -4,13 +4,12 @@ import { initializeApp } from
 import {
   getAuth,
   signInAnonymously,
-  signInWithEmailAndPassword
+  signInWithEmailAndPassword,
+  signOut
 } from
   "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 
-import {
-  getDatabase
-} from
+import { getDatabase } from
   "https://www.gstatic.com/firebasejs/12.17.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -24,31 +23,13 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-
 const auth = getAuth(app);
 const database = getDatabase(app);
 
-const authReady = signInAnonymously(auth)
-  .then((userCredential) => {
-    console.log(
-      "Firebase匿名認証成功:",
-      userCredential.user.uid
-    );
-
-    return userCredential.user;
-  })
-  .catch((error) => {
-    console.error(
-      "Firebase匿名認証エラー:",
-      error
-    );
-
-    throw error;
-  });
-
 export {
-  database,
   auth,
-  authReady,
-  signInWithEmailAndPassword
+  database,
+  signInAnonymously,
+  signInWithEmailAndPassword,
+  signOut
 };
