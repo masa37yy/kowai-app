@@ -2,7 +2,8 @@ import {
   auth,
   database,
   signInWithEmailAndPassword,
-  signOut
+  signOut,
+  onAuthStateChanged
 } from "./firebase.js";
 
 import {
@@ -137,7 +138,45 @@ setManagementEnabled(false);
 console.log(
   "host.js 読み込み完了。ホスト認証待ちです。"
 );
+/*
+  Firebaseに以前のホストログインが残っている場合、
+  PIN・メール・パスワード入力を省略して
+  そのまま管理画面を開く。
+*/
+let authCheckFinished = false;
 
+onAuthStateChanged(
+  auth,
+  (user) => {
+
+    if (authCheckFinished) {
+      return;
+    }
+
+    authCheckFinished = true;
+
+    if (
+      user &&
+      user.uid === HOST_UID
+    ) {
+
+      console.log(
+        "保存済みのホストログインを確認:",
+        user.uid
+      );
+
+      unlockHostScreen();
+      startHostApp();
+
+    } else {
+
+      console.log(
+        "ホストログインが必要です"
+      );
+
+    }
+  }
+);
 /* =========================
    ホストログイン
 ========================= */
