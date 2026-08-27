@@ -18,13 +18,7 @@ import {
   GitHubがPublicの場合、ソースを見れば確認できるため、
   本格的なセキュリティ機能ではありません。
 */
-const HOST_PIN = "1234";
 
-const pinGate = document.getElementById("pinGate");
-const pinForm = document.getElementById("pinForm");
-const pinInput = document.getElementById("pinInput");
-const pinMessage = document.getElementById("pinMessage");
-const hostScreen = document.getElementById("hostScreen");
 
 const countNumber = document.getElementById("countNumber");
 const storyTitle = document.getElementById("storyTitle");
@@ -60,28 +54,6 @@ let effectsEnabled = false;
 let audioContext = null;
 let eventIsActive = false;
 
-function unlockHost() {
-  pinGate.hidden = true;
-  hostScreen.classList.remove("is-locked");
-  sessionStorage.setItem("kowai-host-unlocked", "true");
-}
-
-if (sessionStorage.getItem("kowai-host-unlocked") === "true") {
-  unlockHost();
-}
-
-pinForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-
-  if (pinInput.value === HOST_PIN) {
-    unlockHost();
-    return;
-  }
-
-  pinMessage.textContent = "PINが違います";
-  pinMessage.classList.add("error");
-  pinInput.select();
-});
 
 const participantUrl = new URL("index.html", window.location.href).href;
 document.getElementById("participantUrl").textContent = participantUrl;
