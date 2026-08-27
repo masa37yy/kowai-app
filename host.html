@@ -13,20 +13,51 @@
 <body>
   <div id="pinGate" class="pin-gate">
     <form id="pinForm" class="pin-card">
-      <h1>ホスト画面</h1>
-      <p>管理用PINを入力してください</p>
-      <input
-        id="pinInput"
-        class="story-input"
-        type="password"
-        inputmode="numeric"
-        maxlength="8"
-        autocomplete="off"
-        placeholder="PIN"
-      >
-      <button class="save-button" type="submit">開く</button>
-      <p id="pinMessage" class="host-message"></p>
-    </form>
+  <h1>ホスト画面</h1>
+
+  <p>
+    管理者PINとFirebaseの
+    ホストアカウントでログインしてください
+  </p>
+
+  <input
+    id="pinInput"
+    class="story-input"
+    type="password"
+    inputmode="numeric"
+    maxlength="8"
+    autocomplete="off"
+    placeholder="管理者PIN"
+  >
+
+  <input
+    id="hostEmail"
+    class="story-input"
+    type="email"
+    autocomplete="username"
+    placeholder="ホスト用メールアドレス"
+    style="margin-top: 12px;"
+  >
+
+  <input
+    id="hostPassword"
+    class="story-input"
+    type="password"
+    autocomplete="current-password"
+    placeholder="ホスト用パスワード"
+    style="margin-top: 12px;"
+  >
+
+  <button
+    id="hostLoginButton"
+    class="save-button"
+    type="submit"
+  >
+    ホストとしてログイン
+  </button>
+
+  <p id="pinMessage" class="host-message"></p>
+</form>
   </div>
 
   <div id="scaryOverlay" class="scary-overlay" aria-hidden="true">怖</div>
@@ -144,42 +175,9 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
-  <script>
-  const HOST_PIN = "4837";
+ 
 
-  const pinForm = document.getElementById("pinForm");
-  const pinInput = document.getElementById("pinInput");
-  const pinMessage = document.getElementById("pinMessage");
-  const pinGate = document.getElementById("pinGate");
-  const hostScreen = document.getElementById("hostScreen");
 
-  function unlockHostScreen() {
-    pinGate.hidden = true;
-    hostScreen.classList.remove("is-locked");
-    sessionStorage.setItem("kowai-host-unlocked", "true");
-  }
-
-  if (sessionStorage.getItem("kowai-host-unlocked") === "true") {
-    unlockHostScreen();
-  }
-
-  pinForm.addEventListener("submit", function (event) {
-    event.preventDefault();
-
-    const enteredPin = pinInput.value.trim();
-
-    if (enteredPin === HOST_PIN) {
-      pinMessage.textContent = "";
-      unlockHostScreen();
-    } else {
-      pinMessage.textContent = "PINが違います";
-      pinMessage.classList.add("error");
-      pinInput.select();
-    }
-  });
-</script>
-
-<script type="module" src="host.js"></script>
   <script type="module" src="host.js"></script>
 </body>
 </html>
