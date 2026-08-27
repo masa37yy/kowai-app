@@ -1,4 +1,7 @@
-import { database } from "./firebase.js";
+import {
+  database,
+  authReady
+} from "./firebase.js";
 
 import {
   ref,
