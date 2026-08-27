@@ -13,6 +13,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-database.js";
 
 await authReady;
+
 /*
   注意：
   このPINは、一般参加者の誤操作を防ぐための簡易機能です。
