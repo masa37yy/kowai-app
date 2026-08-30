@@ -18,7 +18,7 @@ import {
    管理者設定
 ========================= */
 
-const HOST_PIN = "4837";
+const HOST_PIN = "1234";
 
 const HOST_UID =
   "ERZb5quIuSQW1iMeaco5AZZt5Jn1";
